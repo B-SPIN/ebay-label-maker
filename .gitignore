@@ -27,3 +27,8 @@ dist-ssr
 # extra ignore folders and files
 _data
 _data/*
+
+v2
+v2/*
+docs
+docs/*

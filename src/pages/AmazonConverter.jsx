@@ -376,7 +376,7 @@ export default function AmazonConverter() {
         const quantity = getItemQuantity(normalizedRow);
         const customLabel = resolveValue(normalizedRow, ['product-name', 'sku', 'custom-label', 'item-title', 'item-name']) || '';
         const items = [{ customLabel, quantity }];
-        const itemDescription = customLabel.substring(0, 50);
+        const itemDescription = customLabel.slice(-50);
         const sourceOrderNumber = resolveValue(normalizedRow, ['order-number', 'amazon-order-number', 'order-id']);
         const sourceRecipientName = resolveValue(normalizedRow, ['recipient-name', 'buyer-name', 'buyer']);
 
