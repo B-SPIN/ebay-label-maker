@@ -62,9 +62,9 @@ function buildInvoicePDF(invoice, biz) {
   doc.setTextColor(100, 100, 100);
   let bizY = y + 7;
   if (biz.address) { doc.text(biz.address, margin, bizY); bizY += 5; }
-  if (biz.phone)   { doc.text('Ph: ' + biz.phone, margin, bizY); bizY += 5; }
-  if (biz.email)   { doc.text(biz.email, margin, bizY); bizY += 5; }
-  if (biz.abn)     { doc.text('ABN: ' + biz.abn, margin, bizY); }
+  if (biz.phone) { doc.text('Ph: ' + biz.phone, margin, bizY); bizY += 5; }
+  if (biz.email) { doc.text(biz.email, margin, bizY); bizY += 5; }
+  if (biz.abn) { doc.text('ABN: ' + biz.abn, margin, bizY); }
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
@@ -104,7 +104,7 @@ function buildInvoicePDF(invoice, biz) {
   doc.setTextColor(90, 90, 90);
   let billY = y + 19;
   if (invoice.clientMobile) { doc.text('Ph: ' + invoice.clientMobile, margin + 5, billY); billY += 5; }
-  if (invoice.clientEmail)  { doc.text(invoice.clientEmail, margin + 5, billY); }
+  if (invoice.clientEmail) { doc.text(invoice.clientEmail, margin + 5, billY); }
   if (invoice.clientAddress) {
     const addrLines = doc.splitTextToSize(invoice.clientAddress, 80);
     doc.text(addrLines, W - margin - 5, y + 13, { align: 'right' });
@@ -125,7 +125,7 @@ function buildInvoicePDF(invoice, biz) {
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  (invoice.rows || []).forEach(function(row, i) {
+  (invoice.rows || []).forEach(function (row, i) {
     if (i % 2 === 1) {
       doc.setFillColor(252, 252, 252);
       doc.rect(margin, y - 3, W - margin * 2, 8, 'F');
@@ -148,7 +148,7 @@ function buildInvoicePDF(invoice, biz) {
   y += 6;
 
   const totW = 72, totX = W - margin - totW;
-  const totRow = function(label, value, bold, highlight) {
+  const totRow = function (label, value, bold, highlight) {
     if (highlight) {
       doc.setFillColor(237, 233, 254);
       doc.roundedRect(totX, y - 3, totW, 9, 1.5, 1.5, 'F');
@@ -250,7 +250,14 @@ function ItemSearch({ invoiceItems, selectedIds, onAdd }) {
     const q = query.toLowerCase();
     return invoiceItems
       .filter(item => !selectedIds.includes(item.id))
-      .filter(item => (item.title || item.description || '').toLowerCase().includes(q))
+      .filter(item => {
+        const searchableText = [
+          item.title,
+          item.sku,
+          item.location,
+        ].filter(Boolean).join(' ').toLowerCase();
+        return searchableText.includes(q);
+      })
       .slice(0, 10);
   }, [invoiceItems, selectedIds, query]);
 
@@ -274,9 +281,9 @@ function ItemSearch({ invoiceItems, selectedIds, onAdd }) {
   const onKey = (e) => {
     if (!open || !filtered.length) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); setHighlight(h => Math.min(h + 1, filtered.length - 1)); }
-    if (e.key === 'ArrowUp')   { e.preventDefault(); setHighlight(h => Math.max(h - 1, 0)); }
-    if (e.key === 'Enter')     { e.preventDefault(); if (filtered[highlight]) select(filtered[highlight]); }
-    if (e.key === 'Escape')    { setOpen(false); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); setHighlight(h => Math.max(h - 1, 0)); }
+    if (e.key === 'Enter') { e.preventDefault(); if (filtered[highlight]) select(filtered[highlight]); }
+    if (e.key === 'Escape') { setOpen(false); }
   };
 
   return (
@@ -435,24 +442,24 @@ const labelStyle = {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function SalesTerminal() {
-  const invoiceItems  = useLiveQuery(() => db.invoice_items.toArray(), []);
+  const invoiceItems = useLiveQuery(() => db.invoice_items.toArray(), []);
   const savedInvoices = useLiveQuery(() => db.invoices.orderBy('createdAt').reverse().toArray(), []);
 
   const [biz, setBiz] = useState({ name: '', address: '', phone: '', email: '', abn: '', logoUrl: '' });
   useEffect(() => {
     (async () => {
-      const name     = await getSetting('sender_business_name') || await getSetting('sender_name') || '';
-      const addr1    = await getSetting('sender_address_line_1') || '';
-      const addr2    = await getSetting('sender_address_line_2') || '';
-      const suburb   = await getSetting('sender_suburb') || '';
-      const state    = await getSetting('sender_state') || '';
+      const name = await getSetting('sender_business_name') || await getSetting('sender_name') || '';
+      const addr1 = await getSetting('sender_address_line_1') || '';
+      const addr2 = await getSetting('sender_address_line_2') || '';
+      const suburb = await getSetting('sender_suburb') || '';
+      const state = await getSetting('sender_state') || '';
       const postcode = await getSetting('sender_postcode') || '';
       setBiz({
         name,
         address: [addr1, addr2, suburb, state, postcode].filter(Boolean).join(', '),
-        phone:   await getSetting('sender_phone') || '',
-        email:   await getSetting('sender_email') || '',
-        abn:     await getSetting('sender_abn') || '',
+        phone: await getSetting('sender_phone') || '',
+        email: await getSetting('sender_email') || '',
+        abn: await getSetting('sender_abn') || '',
         logoUrl: await getSetting('invoice_logo_url') || '',
       });
     })();
@@ -460,20 +467,20 @@ export default function SalesTerminal() {
 
   const [step, setStep] = useState(1);
 
-  const [invoiceRows, setInvoiceRows]         = useState([]);
+  const [invoiceRows, setInvoiceRows] = useState([]);
   const [selectedItemIds, setSelectedItemIds] = useState([]);
-  const [discountType, setDiscountType]       = useState('none');
-  const [discountValue, setDiscountValue]     = useState('');
-  const [invoiceDate, setInvoiceDate]         = useState(() => new Date().toISOString().slice(0, 10));
+  const [discountType, setDiscountType] = useState('none');
+  const [discountValue, setDiscountValue] = useState('');
+  const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().slice(0, 10));
 
-  const [clientName, setClientName]       = useState('');
-  const [clientMobile, setClientMobile]   = useState('');
-  const [clientEmail, setClientEmail]     = useState('');
+  const [clientName, setClientName] = useState('');
+  const [clientMobile, setClientMobile] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
   const [clientAddress, setClientAddress] = useState('');
 
-  const [step1Error, setStep1Error]   = useState('');
-  const [step2Error, setStep2Error]   = useState('');
-  const [saveStatus, setSaveStatus]   = useState('');
+  const [step1Error, setStep1Error] = useState('');
+  const [step2Error, setStep2Error] = useState('');
+  const [saveStatus, setSaveStatus] = useState('');
   const [saveMessage, setSaveMessage] = useState('');
   const [savedInvoiceRef, setSavedInvoiceRef] = useState(null);
 
@@ -483,7 +490,7 @@ export default function SalesTerminal() {
   const gstIncluded = subtotal / 11;
   const discountAmount = useMemo(() => {
     const val = parseFloat(discountValue) || 0;
-    if (discountType === 'dollar')  return Math.min(val, subtotal);
+    if (discountType === 'dollar') return Math.min(val, subtotal);
     if (discountType === 'percent') return subtotal * (Math.min(val, 100) / 100);
     return 0;
   }, [discountType, discountValue, subtotal]);
@@ -827,11 +834,11 @@ export default function SalesTerminal() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, gap: 24 }}>
               <div style={{ flex: 1 }}>
                 {biz.logoUrl && <img src={biz.logoUrl} alt="Logo" style={{ maxWidth: 160, maxHeight: 60, objectFit: 'contain', marginBottom: 10, display: 'block' }} />}
-                {biz.name    && <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 4 }}>{biz.name}</div>}
+                {biz.name && <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 4 }}>{biz.name}</div>}
                 {biz.address && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{biz.address}</div>}
-                {biz.phone   && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Ph: {biz.phone}</div>}
-                {biz.email   && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{biz.email}</div>}
-                {biz.abn     && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ABN: {biz.abn}</div>}
+                {biz.phone && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Ph: {biz.phone}</div>}
+                {biz.email && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{biz.email}</div>}
+                {biz.abn && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ABN: {biz.abn}</div>}
                 {!biz.name && !biz.address && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Configure business details in Settings</div>}
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -853,7 +860,7 @@ export default function SalesTerminal() {
               </div>
               <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 {clientMobile && React.createElement('div', null, '📱 ' + clientMobile)}
-                {clientEmail  && React.createElement('div', null, '✉ ' + clientEmail)}
+                {clientEmail && React.createElement('div', null, '✉ ' + clientEmail)}
                 {clientAddress && React.createElement('div', { style: { marginTop: 4 } }, clientAddress)}
               </div>
             </div>
@@ -861,7 +868,7 @@ export default function SalesTerminal() {
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 22 }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--border)' }}>
-                  {[['Description', 'left'], ['Qty', 'center'], ['Unit Price', 'right'], ['Total', 'right']].map(function(pair) {
+                  {[['Description', 'left'], ['Qty', 'center'], ['Unit Price', 'right'], ['Total', 'right']].map(function (pair) {
                     return React.createElement('th', { key: pair[0], style: { textAlign: pair[1], padding: '9px 8px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' } }, pair[0]);
                   })}
                 </tr>
