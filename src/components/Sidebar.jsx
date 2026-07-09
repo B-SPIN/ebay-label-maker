@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, AlertCircle, Printer, Settings, Box, Moon, Sun, PanelLeftClose, PanelLeftOpen, BookOpen, ShoppingBag, FileText, List, Package, ShoppingCart, History } from 'lucide-react';
+import { LayoutDashboard, AlertCircle, Printer, Settings, Smartphone, Moon, Sun, PanelLeftClose, PanelLeftOpen, BookOpen, ShoppingBag, FileText, List, Package, ShoppingCart, History } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import AppLogo from './AppLogo';
 import { getSetting, saveSetting } from '../db/database';
@@ -108,7 +108,7 @@ export default function Sidebar({ className = "" }) {
           {!collapsed && <span>Invoice History</span>}
         </NavLink>
         <NavLink to="/invoice-items" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"} title="Products">
-          <Box />
+          <Smartphone />
           {!collapsed && <span>Products</span>}
         </NavLink>
 
