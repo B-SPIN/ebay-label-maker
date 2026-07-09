@@ -45,6 +45,7 @@ export default function Settings() {
   const [senderPostcode, setSenderPostcode] = useState('');
   const [senderPhone, setSenderPhone] = useState('');
   const [senderEmail, setSenderEmail] = useState('');
+  const [senderAbn, setSenderAbn] = useState('');
 
   // Alternate Sender Details (used when shipping to ACT)
   const [altSenderName, setAltSenderName] = useState('');
@@ -157,6 +158,7 @@ export default function Settings() {
         setSenderPostcode(await getSetting('sender_postcode') || '');
         setSenderPhone(await getSetting('sender_phone') || '');
         setSenderEmail(await getSetting('sender_email') || '');
+        setSenderAbn(await getSetting('sender_abn') || '');
 
         // Load Alternate Sender Details
         setAltSenderName(await getSetting('alt_sender_name') || '');
@@ -222,6 +224,7 @@ export default function Settings() {
       await saveSetting('sender_postcode', senderPostcode);
       await saveSetting('sender_phone', senderPhone);
       await saveSetting('sender_email', senderEmail);
+      await saveSetting('sender_abn', senderAbn);
 
       // Save Alternate Sender Details
       await saveSetting('alt_sender_name', altSenderName);
@@ -809,6 +812,11 @@ export default function Settings() {
                 <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Address</label>
                 <input type="email" value={senderEmail} onChange={e => setSenderEmail(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
               </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>ABN <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>(used on invoices)</span></label>
+              <input type="text" value={senderAbn} onChange={e => setSenderAbn(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} placeholder="e.g. 12 345 678 901" />
             </div>
 
             <button

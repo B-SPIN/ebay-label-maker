@@ -68,6 +68,18 @@ db.version(7).stores({
   ebay_conversions: '++id, filename, createdAt'
 });
 
+// v8: Simplified invoice schema — GST-inclusive, always PAID, new sequential numbering
+db.version(8).stores({
+  settings: 'key',
+  daily_usage: 'date',
+  csv_logs: '++id, filename, processedAt, totalRows, validCount, invalidCount',
+  orders: '++id, orderId, buyerUsername, batchTimestamp, status',
+  amazon_conversions: '++id, filename, createdAt',
+  invoice_items: '++id, description, unitPrice, sampleData',
+  invoices: '++id, invoiceNumber, invoiceDate, clientName, clientMobile, clientEmail, createdAt',
+  ebay_conversions: '++id, filename, createdAt'
+});
+
 
 // Helper to get a setting
 export async function getSetting(key) {
