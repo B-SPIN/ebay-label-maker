@@ -9,7 +9,28 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png'],
-      manifest: false, // Managed manually in public/manifest.json
+      manifest: {
+        name: 'eBay Label Maker',
+        short_name: 'LabelMaker',
+        description: 'Process eBay order CSVs and generate optimised thermal labels.',
+        display: 'standalone',
+        orientation: 'portrait',
+        background_color: '#0f172a',
+        theme_color: '#6366f1',
+        icons: [
+          {
+            src: 'icons/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      },
       workbox: {
         // Cache-first for the app shell + static assets
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
