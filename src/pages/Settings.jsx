@@ -45,8 +45,17 @@ export default function Settings() {
   const [senderPostcode, setSenderPostcode] = useState('');
   const [senderPhone, setSenderPhone] = useState('');
   const [senderEmail, setSenderEmail] = useState('');
-  const [senderAbn, setSenderAbn] = useState('');
-
+  // Invoice Details
+  const [invoiceName, setInvoiceName] = useState('');
+  const [invoiceBusiness, setInvoiceBusiness] = useState('');
+  const [invoiceAddress1, setInvoiceAddress1] = useState('');
+  const [invoiceAddress2, setInvoiceAddress2] = useState('');
+  const [invoiceSuburb, setInvoiceSuburb] = useState('');
+  const [invoiceState, setInvoiceState] = useState('');
+  const [invoicePostcode, setInvoicePostcode] = useState('');
+  const [invoicePhone, setInvoicePhone] = useState('');
+  const [invoiceEmail, setInvoiceEmail] = useState('');
+  const [invoiceAbn, setInvoiceAbn] = useState('');
   // Alternate Sender Details (used when shipping to ACT)
   const [altSenderName, setAltSenderName] = useState('');
   const [altSenderBusiness, setAltSenderBusiness] = useState('');
@@ -158,7 +167,17 @@ export default function Settings() {
         setSenderPostcode(await getSetting('sender_postcode') || '');
         setSenderPhone(await getSetting('sender_phone') || '');
         setSenderEmail(await getSetting('sender_email') || '');
-        setSenderAbn(await getSetting('sender_abn') || '');
+        // Load Invoice Address Details
+        setInvoiceName(await getSetting('invoice_name') || '');
+        setInvoiceBusiness(await getSetting('invoice_business_name') || '');
+        setInvoiceAddress1(await getSetting('invoice_address_line_1') || '');
+        setInvoiceAddress2(await getSetting('invoice_address_line_2') || '');
+        setInvoiceSuburb(await getSetting('invoice_suburb') || '');
+        setInvoiceState(await getSetting('invoice_state') || '');
+        setInvoicePostcode(await getSetting('invoice_postcode') || '');
+        setInvoicePhone(await getSetting('invoice_phone') || '');
+        setInvoiceEmail(await getSetting('invoice_email') || '');
+        setInvoiceAbn(await getSetting('invoice_abn') || '');
 
         // Load Alternate Sender Details
         setAltSenderName(await getSetting('alt_sender_name') || '');
@@ -224,7 +243,17 @@ export default function Settings() {
       await saveSetting('sender_postcode', senderPostcode);
       await saveSetting('sender_phone', senderPhone);
       await saveSetting('sender_email', senderEmail);
-      await saveSetting('sender_abn', senderAbn);
+      // Save Invoice Address Details
+      await saveSetting('invoice_name', invoiceName);
+      await saveSetting('invoice_business_name', invoiceBusiness);
+      await saveSetting('invoice_address_line_1', invoiceAddress1);
+      await saveSetting('invoice_address_line_2', invoiceAddress2);
+      await saveSetting('invoice_suburb', invoiceSuburb);
+      await saveSetting('invoice_state', invoiceState);
+      await saveSetting('invoice_postcode', invoicePostcode);
+      await saveSetting('invoice_phone', invoicePhone);
+      await saveSetting('invoice_email', invoiceEmail);
+      await saveSetting('invoice_abn', invoiceAbn);
 
       // Save Alternate Sender Details
       await saveSetting('alt_sender_name', altSenderName);
@@ -814,11 +843,6 @@ export default function Settings() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>ABN <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>(used on invoices)</span></label>
-              <input type="text" value={senderAbn} onChange={e => setSenderAbn(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} placeholder="e.g. 12 345 678 901" />
-            </div>
-
             <button
               onClick={handleSave}
               style={{
@@ -941,13 +965,87 @@ export default function Settings() {
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Sender Name</label>
+                <input type="text" value={invoiceName} onChange={e => setInvoiceName(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} placeholder="Full Name" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Business Name</label>
+                <input type="text" value={invoiceBusiness} onChange={e => setInvoiceBusiness(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} placeholder="Optional" />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Address Line 1</label>
+              <input type="text" value={invoiceAddress1} onChange={e => setInvoiceAddress1(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} placeholder="Street Address" />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Address Line 2</label>
+              <input type="text" value={invoiceAddress2} onChange={e => setInvoiceAddress2(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} placeholder="Apartment, suite, etc." />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Suburb</label>
+                <input type="text" value={invoiceSuburb} onChange={e => setInvoiceSuburb(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>State</label>
+                <input type="text" value={invoiceState} onChange={e => setInvoiceState(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Postcode</label>
+                <input type="text" value={invoicePostcode} onChange={e => setInvoicePostcode(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Phone Number</label>
+                <input type="text" value={invoicePhone} onChange={e => setInvoicePhone(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Address</label>
+                <input type="email" value={invoiceEmail} onChange={e => setInvoiceEmail(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>ABN</label>
+              <input type="text" value={invoiceAbn} onChange={e => setInvoiceAbn(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} placeholder="e.g. 12 345 678 901" />
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Invoice Terms</label>
               <textarea value={invoiceTerms} onChange={e => setInvoiceTerms(e.target.value)} rows={4} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)', resize: 'vertical' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Invoice Logo URL</label>
-              <input type="text" value={invoiceLogoUrl} onChange={e => setInvoiceLogoUrl(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} placeholder="https://example.com/logo.png" />
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Invoice Logo</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {invoiceLogoUrl && (
+                  <div style={{ background: '#fff', padding: '4px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                    <img src={invoiceLogoUrl} alt="Logo Preview" style={{ maxWidth: 120, maxHeight: 48, objectFit: 'contain', display: 'block' }} />
+                  </div>
+                )}
+                <label style={{ cursor: 'pointer', padding: '8px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', transition: 'var(--transition)' }}>
+                  Upload Image
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => setInvoiceLogoUrl(reader.result);
+                      reader.readAsDataURL(file);
+                    }
+                  }} />
+                </label>
+                {invoiceLogoUrl && (
+                  <button onClick={() => setInvoiceLogoUrl('')} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, padding: '8px' }}>
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <button

@@ -448,18 +448,18 @@ export default function SalesTerminal() {
   const [biz, setBiz] = useState({ name: '', address: '', phone: '', email: '', abn: '', logoUrl: '' });
   useEffect(() => {
     (async () => {
-      const name = await getSetting('sender_business_name') || await getSetting('sender_name') || '';
-      const addr1 = await getSetting('sender_address_line_1') || '';
-      const addr2 = await getSetting('sender_address_line_2') || '';
-      const suburb = await getSetting('sender_suburb') || '';
-      const state = await getSetting('sender_state') || '';
-      const postcode = await getSetting('sender_postcode') || '';
+      const name = await getSetting('invoice_business_name') || await getSetting('invoice_name') || '';
+      const addr1 = await getSetting('invoice_address_line_1') || '';
+      const addr2 = await getSetting('invoice_address_line_2') || '';
+      const suburb = await getSetting('invoice_suburb') || '';
+      const state = await getSetting('invoice_state') || '';
+      const postcode = await getSetting('invoice_postcode') || '';
       setBiz({
         name,
         address: [addr1, addr2, suburb, state, postcode].filter(Boolean).join(', '),
-        phone: await getSetting('sender_phone') || '',
-        email: await getSetting('sender_email') || '',
-        abn: await getSetting('sender_abn') || '',
+        phone: await getSetting('invoice_phone') || '',
+        email: await getSetting('invoice_email') || '',
+        abn: await getSetting('invoice_abn') || '',
         logoUrl: await getSetting('invoice_logo_url') || '',
       });
     })();
