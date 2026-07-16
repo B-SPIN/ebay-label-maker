@@ -41,7 +41,7 @@ function generateInvoiceNumber(savedInvoices) {
 
 // ─── PDF Generation ──────────────────────────────────────────────────────────
 
-function buildInvoicePDF(invoice, biz) {
+export function buildInvoicePDF(invoice, biz) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const W = 210, margin = 18;
   let y = margin;
@@ -52,23 +52,37 @@ function buildInvoicePDF(invoice, biz) {
     doc.text(String(text), W - margin, yPos, { align: 'right' });
   };
 
+  let currentY = y;
+  let nameSize = 22;
+
+  if (biz.logoUrl) {
+    try {
+      doc.addImage(biz.logoUrl, margin, currentY, 35, 20);
+      currentY += 24;
+      nameSize = 14;
+    } catch (e) {
+      console.warn('Failed to add logo to PDF', e);
+    }
+  }
+
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
+  doc.setFontSize(nameSize);
   doc.setTextColor(30, 30, 30);
-  if (biz.name) doc.text(biz.name, margin, y);
+  if (biz.name) doc.text(biz.name, margin, currentY);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(100, 100, 100);
-  let bizY = y + 7;
+  let bizY = currentY + (nameSize === 22 ? 7 : 5);
   if (biz.address) { doc.text(biz.address, margin, bizY); bizY += 5; }
+  if (biz.abn) { doc.text('ABN: ' + biz.abn, margin, bizY); bizY += 5; }
   if (biz.phone) { doc.text('Ph: ' + biz.phone, margin, bizY); bizY += 5; }
-  if (biz.email) { doc.text(biz.email, margin, bizY); bizY += 5; }
-  if (biz.abn) { doc.text('ABN: ' + biz.abn, margin, bizY); }
+  if (biz.email) { doc.text('Email: ' + biz.email, margin, bizY); bizY += 5; }
+  if (biz.website) { doc.text('Web: ' + biz.website, margin, bizY); }
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  right('INVOICE', y, [120, 120, 120]);
+  right('TAX INVOICE', y, [120, 120, 120]);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
   right(invoice.invoiceNumber, y + 7, [30, 30, 30]);
@@ -445,7 +459,7 @@ export default function SalesTerminal() {
   const invoiceItems = useLiveQuery(() => db.invoice_items.toArray(), []);
   const savedInvoices = useLiveQuery(() => db.invoices.orderBy('createdAt').reverse().toArray(), []);
 
-  const [biz, setBiz] = useState({ name: '', address: '', phone: '', email: '', abn: '', logoUrl: '' });
+  const [biz, setBiz] = useState({ name: '', address: '', phone: '', email: '', website: '', abn: '', logoUrl: '' });
   useEffect(() => {
     (async () => {
       const name = await getSetting('invoice_business_name') || await getSetting('invoice_name') || '';
@@ -459,6 +473,7 @@ export default function SalesTerminal() {
         address: [addr1, addr2, suburb, state, postcode].filter(Boolean).join(', '),
         phone: await getSetting('invoice_phone') || '',
         email: await getSetting('invoice_email') || '',
+        website: await getSetting('invoice_website') || '',
         abn: await getSetting('invoice_abn') || '',
         logoUrl: await getSetting('invoice_logo_url') || '',
       });
@@ -836,9 +851,10 @@ export default function SalesTerminal() {
                 {biz.logoUrl && <img src={biz.logoUrl} alt="Logo" style={{ maxWidth: 160, maxHeight: 60, objectFit: 'contain', marginBottom: 10, display: 'block' }} />}
                 {biz.name && <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 4 }}>{biz.name}</div>}
                 {biz.address && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{biz.address}</div>}
-                {biz.phone && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Ph: {biz.phone}</div>}
-                {biz.email && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{biz.email}</div>}
                 {biz.abn && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ABN: {biz.abn}</div>}
+                {biz.phone && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Ph: {biz.phone}</div>}
+                {biz.email && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Email: {biz.email}</div>}
+                {biz.website && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Web: {biz.website}</div>}
                 {!biz.name && !biz.address && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Configure business details in Settings</div>}
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>

@@ -55,6 +55,7 @@ export default function Settings() {
   const [invoicePostcode, setInvoicePostcode] = useState('');
   const [invoicePhone, setInvoicePhone] = useState('');
   const [invoiceEmail, setInvoiceEmail] = useState('');
+  const [invoiceWebsite, setInvoiceWebsite] = useState('');
   const [invoiceAbn, setInvoiceAbn] = useState('');
   // Alternate Sender Details (used when shipping to ACT)
   const [altSenderName, setAltSenderName] = useState('');
@@ -177,6 +178,7 @@ export default function Settings() {
         setInvoicePostcode(await getSetting('invoice_postcode') || '');
         setInvoicePhone(await getSetting('invoice_phone') || '');
         setInvoiceEmail(await getSetting('invoice_email') || '');
+        setInvoiceWebsite(await getSetting('invoice_website') || '');
         setInvoiceAbn(await getSetting('invoice_abn') || '');
 
         // Load Alternate Sender Details
@@ -253,6 +255,7 @@ export default function Settings() {
       await saveSetting('invoice_postcode', invoicePostcode);
       await saveSetting('invoice_phone', invoicePhone);
       await saveSetting('invoice_email', invoiceEmail);
+      await saveSetting('invoice_website', invoiceWebsite);
       await saveSetting('invoice_abn', invoiceAbn);
 
       // Save Alternate Sender Details
@@ -1010,6 +1013,11 @@ export default function Settings() {
                 <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Address</label>
                 <input type="email" value={invoiceEmail} onChange={e => setInvoiceEmail(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
               </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Website URL</label>
+              <input type="url" value={invoiceWebsite} onChange={e => setInvoiceWebsite(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} placeholder="e.g. www.mystore.com" />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

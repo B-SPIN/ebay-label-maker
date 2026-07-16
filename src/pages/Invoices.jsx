@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, getSetting } from '../db/database.js';
-import { downloadInvoicePDF } from './SalesTerminal.jsx';
+import { downloadInvoicePDF, buildInvoicePDF } from './SalesTerminal.jsx';
 import {
-  FileText, Trash2, Download, Users, CheckCircle
+  FileText, Trash2, Download, Users, CheckCircle, Eye, X
 } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -47,6 +47,7 @@ export default function InvoiceHistory() {
   );
 
   const [bizCache, setBizCache] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   // Load biz details lazily (only when PDF is requested)
   const getBiz = useCallback(async () => {
@@ -62,12 +63,19 @@ export default function InvoiceHistory() {
       address: [addr1, addr2, suburb, state, postcode].filter(Boolean).join(', '),
       phone:   await getSetting('invoice_phone') || '',
       email:   await getSetting('invoice_email') || '',
+      website: await getSetting('invoice_website') || '',
       abn:     await getSetting('invoice_abn') || '',
       logoUrl: await getSetting('invoice_logo_url') || '',
     };
     setBizCache(biz);
     return biz;
   }, [bizCache]);
+
+  const handlePreviewPDF = async (invoice) => {
+    const biz = await getBiz();
+    const doc = buildInvoicePDF(invoice, biz);
+    setPreviewUrl(doc.output('bloburl'));
+  };
 
   const handleDownloadPDF = async (invoice) => {
     const biz = await getBiz();
@@ -210,8 +218,8 @@ export default function InvoiceHistory() {
                     <td style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
                         <button
-                          onClick={() => handleDownloadPDF(invoice)}
-                          title="Download PDF"
+                          onClick={() => handlePreviewPDF(invoice)}
+                          title="Preview PDF"
                           style={{
                             background: 'var(--accent-soft)', border: '1px solid var(--accent)',
                             color: 'var(--accent)', cursor: 'pointer', borderRadius: 'var(--radius-sm)',
@@ -220,6 +228,20 @@ export default function InvoiceHistory() {
                           }}
                           onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.color = '#fff'; }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'var(--accent-soft)'; e.currentTarget.style.color = 'var(--accent)'; }}
+                        >
+                          <Eye size={13} /> Preview
+                        </button>
+                        <button
+                          onClick={() => handleDownloadPDF(invoice)}
+                          title="Download PDF"
+                          style={{
+                            background: 'transparent', border: '1px solid var(--border)',
+                            color: 'var(--text-secondary)', cursor: 'pointer', borderRadius: 'var(--radius-sm)',
+                            padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 5,
+                            fontSize: '0.8rem', fontWeight: 600, transition: 'all 0.15s'
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
                         >
                           <Download size={13} /> PDF
                         </button>
@@ -256,6 +278,27 @@ export default function InvoiceHistory() {
           </div>
         )}
       </div>
+
+      {previewUrl && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000,
+          display: 'flex', flexDirection: 'column', padding: '40px'
+        }}>
+          <div style={{
+            background: 'white', borderRadius: '8px', flex: 1,
+            display: 'flex', flexDirection: 'column', overflow: 'hidden'
+          }}>
+            <div style={{ padding: '16px', borderBottom: '1px solid #ccc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0, fontSize: '1.1rem' }}>Invoice Preview</h2>
+              <button onClick={() => setPreviewUrl(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <iframe src={previewUrl} style={{ width: '100%', height: '100%', border: 'none' }} title="PDF Preview" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
