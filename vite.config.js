@@ -59,7 +59,6 @@ export default defineConfig({
       }
     })
   ],
-  // base: './',
-  base: '/ebay-label-maker/',
+  base: '/',
 })
 

@@ -1,6 +1,5 @@
 {
   "name": "ebay-label-maker",
-  "homepage": "https://chaudharyumesh.com.np/",
   "private": true,
   "version": "0.0.1",
   "description": "A streamlined tool for processing eBay order CSVs and generating optimized thermal labels.\nFeatures address validation, batch isolation, and customizable printing layouts.",
