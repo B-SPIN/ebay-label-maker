@@ -5,6 +5,7 @@ import { applyLabelFont } from '../services/fontLoader';
 import { Key, Activity, Save, CheckCircle, AlertCircle, Layout, Type, Search, Trash2, Sun, Moon, Box, Settings as SettingsIcon, Eye, RotateCcw, CloudCog, FileText } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import PreviewDialog from '../components/PreviewDialog';
+import EbayHeaderSettings from '../components/EbayHeaderSettings';
 
 const POPULAR_FONTS = [
   'Arial', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat',
@@ -1076,6 +1077,8 @@ export default function Settings() {
             Save Invoice Defaults
           </button>
         </div>
+
+        {isAdmin && <EbayHeaderSettings />}
 
         {isAdmin && (
           <div className="card" style={{ borderTop: '4px solid var(--danger)', height: '100%' }}>
