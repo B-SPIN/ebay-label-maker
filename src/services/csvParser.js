@@ -1,6 +1,12 @@
 import Papa from 'papaparse';
+import { DEFAULT_HEADER_MAP, headerAliases, pickHeader } from './ebayHeaders.js';
 
-export const parseEbayCsv = (fileOrString) => {
+// headerMap: eBay header names to read (see ebayHeaders.js); defaults to the standard names.
+export const parseEbayCsv = (fileOrString, headerMap = DEFAULT_HEADER_MAP) => {
+  const get = (item, key) => pickHeader(item, headerMap, key);
+  const markerAliases = headerAliases(headerMap, 'salesRecordNumber');
+  const orderAliases = headerAliases(headerMap, 'orderNumber');
+
   return new Promise((resolve, reject) => {
     Papa.parse(fileOrString, {
       skipEmptyLines: 'greedy',
@@ -11,7 +17,7 @@ export const parseEbayCsv = (fileOrString) => {
           // Find the actual header row index (eBay CSVs often have empty/junk rows at the top)
           let headerIndex = -1;
           for (let i = 0; i < rawData.length; i++) {
-            if (rawData[i][0] === 'Sales Record Number' || rawData[i].includes('Order Number')) {
+            if (markerAliases.includes(rawData[i][0]) || orderAliases.some(a => rawData[i].includes(a))) {
               headerIndex = i;
               break;
             }
@@ -37,25 +43,25 @@ export const parseEbayCsv = (fileOrString) => {
           const ordersMap = new Map();
 
           for (const item of items) {
-            const orderNum = item['Order Number'];
+            const orderNum = get(item, 'orderNumber');
             if (!orderNum || orderNum.includes('record(s) downloaded') || orderNum.includes('Seller ID')) continue;
 
             if (!ordersMap.has(orderNum)) {
               ordersMap.set(orderNum, {
                 orderNumber: orderNum,
-                buyerUsername: item['Buyer Username'],
-                buyerName: item['Buyer Name'],
-                postToName: item['Post To Name'],
-                phone: item['Post To Phone'] || '',
-                address1: item['Post To Address 1'],
-                address2: item['Post To Address 2'],
-                city: item['Post To City'],
-                state: item['Post To State'],
-                postcode: item['Post To Postal Code'],
-                country: item['Post To Country'],
-                postageService: item['Postage Service'] || '',
+                buyerUsername: get(item, 'buyerUsername'),
+                buyerName: get(item, 'buyerName'),
+                postToName: get(item, 'shipToName'),
+                phone: get(item, 'phone'),
+                address1: get(item, 'address1'),
+                address2: get(item, 'address2'),
+                city: get(item, 'city'),
+                state: get(item, 'state'),
+                postcode: get(item, 'postcode'),
+                country: get(item, 'country'),
+                postageService: get(item, 'postageService'),
                 items: [],
-                buyerNote: item['Buyer Note'],
+                buyerNote: get(item, 'buyerNote'),
                 // Single-row orders have the item on the same line as the address
                 // Multi-row orders have address on first line, items on subsequent lines
               });
@@ -64,32 +70,32 @@ export const parseEbayCsv = (fileOrString) => {
             const order = ordersMap.get(orderNum);
 
             // Sometimes the first row of a multi-item order has the postage service, we don't want to overwrite it with empty strings
-            if (!order.postageService && item['Postage Service']) {
-              order.postageService = item['Postage Service'];
+            if (!order.postageService && get(item, 'postageService')) {
+              order.postageService = get(item, 'postageService');
             }
-            if (!order.buyerUsername && item['Buyer Username']) {
-              order.buyerUsername = item['Buyer Username'];
+            if (!order.buyerUsername && get(item, 'buyerUsername')) {
+              order.buyerUsername = get(item, 'buyerUsername');
             }
-            if (!order.phone && item['Post To Phone']) {
-              order.phone = item['Post To Phone'];
+            if (!order.phone && get(item, 'phone')) {
+              order.phone = get(item, 'phone');
             }
-            if (!order.address1 && item['Post To Address 1']) {
-              order.address1 = item['Post To Address 1'];
-              order.address2 = item['Post To Address 2'];
-              order.city = item['Post To City'];
-              order.state = item['Post To State'];
-              order.postcode = item['Post To Postal Code'];
-              order.postToName = item['Post To Name'];
+            if (!order.address1 && get(item, 'address1')) {
+              order.address1 = get(item, 'address1');
+              order.address2 = get(item, 'address2');
+              order.city = get(item, 'city');
+              order.state = get(item, 'state');
+              order.postcode = get(item, 'postcode');
+              order.postToName = get(item, 'shipToName');
             }
 
-            const customLabel = item['Custom Label'];
-            const quantity = item['Quantity'] ? parseInt(item['Quantity'], 10) : 1;
+            const customLabel = get(item, 'customLabel');
+            const quantity = parseInt(get(item, 'quantity'), 10) || 1;
 
             if (customLabel) {
               order.items.push({ customLabel, quantity });
-            } else if (item['Item Title'] && !item['Item Title'].includes('record(s) downloaded') && !item['Item Title'].includes('Seller ID :')) {
+            } else if (get(item, 'itemTitle') && !get(item, 'itemTitle').includes('record(s) downloaded') && !get(item, 'itemTitle').includes('Seller ID :')) {
               // Fallback to title if no custom label
-              order.items.push({ customLabel: item['Item Title'], quantity });
+              order.items.push({ customLabel: get(item, 'itemTitle'), quantity });
             }
           }
 

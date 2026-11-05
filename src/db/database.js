@@ -1,4 +1,5 @@
 import Dexie from 'dexie';
+import { mergeHeaderMap } from '../services/ebayHeaders.js';
 
 export const db = new Dexie('EbayLabelMakerDB');
 
@@ -90,6 +91,11 @@ export async function getSetting(key) {
 // Helper to save a setting
 export async function saveSetting(key, value) {
   return await db.settings.put({ key, value });
+}
+
+// eBay CSV header names (admin-editable in Settings), merged over the defaults
+export async function getEbayHeaderMap() {
+  return mergeHeaderMap(await getSetting('ebay_header_map'));
 }
 
 // Helper to get daily usage

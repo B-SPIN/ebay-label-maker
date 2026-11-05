@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { Upload, Download, FileText, CheckCircle, AlertCircle, RefreshCcw, ArrowRight, Settings, Printer, Trash2, Edit2 } from 'lucide-react';
-import { db, getSetting } from '../db/database';
+import { db, getSetting, getEbayHeaderMap } from '../db/database';
+import { DEFAULT_HEADER_MAP, headerAliases } from '../services/ebayHeaders';
 import { validateAddresses } from '../services/addressValidator';
 import { formatAddress, formatSendFrom, handlePrintLabel } from '../utils/labelPrinter';
 
@@ -59,19 +60,21 @@ const REQUIRED_FIELDS = [
   'Item Weight'
 ];
 
-const EBAY_TO_AUSPOST_MAP = {
-  'buyer-name': 'Deliver To Name',
-  'post-to-name': 'Deliver To Name',
-  'post-to-address-1': 'Deliver To Address Line 1',
-  'post-to-address-2': 'Deliver To Address Line 2',
-  'post-to-city': 'Deliver To Suburb',
-  'post-to-state': 'Deliver To State',
-  'post-to-postal-code': 'Deliver To Postcode',
-  'post-to-phone': 'Deliver To Phone Number',
-  'buyer-email': 'Deliver To Email Address',
-  'custom-label': 'Item Description',
-  'item-title': 'Item Description'
-};
+// [eBay field key, AusPost column]. Later entries win, so shipToName overrides buyerName.
+// The actual eBay header names for each key are admin-editable in Settings (see ebayHeaders.js).
+const EBAY_TO_AUSPOST_MAP = [
+  ['buyerName', 'Deliver To Name'],
+  ['shipToName', 'Deliver To Name'],
+  ['address1', 'Deliver To Address Line 1'],
+  ['address2', 'Deliver To Address Line 2'],
+  ['city', 'Deliver To Suburb'],
+  ['state', 'Deliver To State'],
+  ['postcode', 'Deliver To Postcode'],
+  ['phone', 'Deliver To Phone Number'],
+  ['buyerEmail', 'Deliver To Email Address'],
+  ['customLabel', 'Item Description'],
+  ['itemTitle', 'Item Description']
+];
 
 const STATE_ABBREVIATIONS = {
   'VICTORIA': 'VIC',
@@ -109,6 +112,9 @@ export default function EbayConverter() {
   const [editingAddressRow, setEditingAddressRow] = React.useState(null);
   const [editAddressData, setEditAddressData] = React.useState({});
   const [isValidating, setIsValidating] = React.useState(false);
+  const [headerMap, setHeaderMap] = React.useState(DEFAULT_HEADER_MAP);
+
+  React.useEffect(() => { getEbayHeaderMap().then(setHeaderMap); }, []);
 
   const normalizeKey = (key) => {
     if (!key) return '';
@@ -131,11 +137,14 @@ export default function EbayConverter() {
 
   const resolveValue = (row, aliases) => aliases.map(alias => row[normalizeKey(alias)]).find(Boolean);
 
-  const getOrderId = (row) => resolveValue(row, ['order-number', 'sales-record-number']);
-  const getBuyerName = (row) => resolveValue(row, ['post-to-name', 'buyer-name', 'recipient-name', 'buyer']);
-  const getBuyerEmail = (row) => resolveValue(row, ['buyer-email', 'buyer-email-address', 'email']);
+  // Configured eBay header names for a field, plus any generic fallbacks
+  const fieldAliases = (key, ...extra) => [...headerAliases(headerMap, key), ...extra];
+  const orderAliases = () => [...fieldAliases('orderNumber', 'sales-record-number')];
+  const getOrderId = (row) => resolveValue(row, orderAliases());
+  const getBuyerName = (row) => resolveValue(row, fieldAliases('shipToName', ...headerAliases(headerMap, 'buyerName'), 'recipient-name', 'buyer'));
+  const getBuyerEmail = (row) => resolveValue(row, fieldAliases('buyerEmail', 'buyer-email-address', 'email'));
   const getItemQuantity = (row) => {
-    const quantity = resolveValue(row, ['quantity-purchased', 'quantity', 'qty', 'item-quantity']) || '1';
+    const quantity = resolveValue(row, fieldAliases('quantity', 'quantity-purchased', 'qty', 'item-quantity')) || '1';
     return Number(quantity) || 1;
   };
   const buildItemDescription = (items) => {
@@ -316,7 +325,6 @@ export default function EbayConverter() {
       const text = event.target.result;
       const lines = text.split(/\r?\n/);
 
-      const HEADER_SENTINEL = 'Sales Record Number';
       const FOOTER_SENTINEL = 'record(s) downloaded';
 
       // Helper: split a raw line into cells, stripping surrounding quotes.
@@ -329,14 +337,14 @@ export default function EbayConverter() {
       for (let i = 0; i < lines.length; i++) {
         if (!lines[i] || lines[i].trim() === '') continue; // skip empty lines
         const firstCell = splitCells(lines[i])[0];
-        if (firstCell === HEADER_SENTINEL) {
+        if (headerAliases(headerMap, 'salesRecordNumber').includes(firstCell)) {
           headerIndex = i;
           break;
         }
       }
 
       if (headerIndex === -1) {
-        setError('Could not find the eBay header row ("Sales Record Number"). Please check your file.');
+        setError(`Could not find the eBay header row ("${headerAliases(headerMap, 'salesRecordNumber').join('" or "')}"). Please check your file or the eBay header names in Settings.`);
         return;
       }
 
@@ -347,7 +355,7 @@ export default function EbayConverter() {
       const headerLine = lines[headerIndex];
       const headerCells = splitCells(headerLine);
       const postageServiceColIndex = headerCells.findIndex(
-        h => h.toLowerCase().replace(/\s+/g, ' ').trim() === 'postage service'
+        h => headerAliases(headerMap, 'postageService').some(a => a.toLowerCase() === h.toLowerCase().replace(/\s+/g, ' ').trim())
       );
 
       const dataLines = [];
@@ -431,7 +439,7 @@ export default function EbayConverter() {
 
       data.forEach((row, index) => {
         const normalizedRow = normalizeRow(row);
-        const sourceOrderNumber = resolveValue(normalizedRow, ['order-number', 'sales-record-number', 'order-id']);
+        const sourceOrderNumber = resolveValue(normalizedRow, [...orderAliases(), 'order-id']);
         const buyerName = getBuyerName(normalizedRow);
 
         if (!sourceOrderNumber && !buyerName) return;
@@ -447,7 +455,7 @@ export default function EbayConverter() {
         }
 
         const quantity = getItemQuantity(normalizedRow);
-        const customLabel = resolveValue(normalizedRow, ['product-name', 'sku', 'custom-label', 'item-title', 'item-name']) || '';
+        const customLabel = resolveValue(normalizedRow, fieldAliases('customLabel', 'product-name', 'sku', ...headerAliases(headerMap, 'itemTitle'), 'item-name')) || '';
         groupedOrders.get(key).items.push({ customLabel, quantity });
       });
 
@@ -458,16 +466,16 @@ export default function EbayConverter() {
           ausPostRow[header] = '';
         });
 
-        Object.entries(EBAY_TO_AUSPOST_MAP).forEach(([ebayKey, ausPostKey]) => {
-          const sourceValue = resolveValue(normalizedRow, [ebayKey]);
+        EBAY_TO_AUSPOST_MAP.forEach(([fieldKey, ausPostKey]) => {
+          const sourceValue = resolveValue(normalizedRow, fieldAliases(fieldKey));
           if (sourceValue) {
             ausPostRow[ausPostKey] = sourceValue;
           }
         });
 
         const itemDescription = buildItemDescription(items);
-        const sourceOrderNumber = resolveValue(normalizedRow, ['order-number', 'sales-record-number', 'order-id']);
-        const sourceRecipientName = resolveValue(normalizedRow, ['recipient-name', 'buyer-name', 'buyer']);
+        const sourceOrderNumber = resolveValue(normalizedRow, [...orderAliases(), 'order-id']);
+        const sourceRecipientName = resolveValue(normalizedRow, fieldAliases('buyerName', 'recipient-name', 'buyer'));
 
         ausPostRow['Send From Name'] = (senderSettings.name || '').substring(0, 35);
         ausPostRow['Send From Business Name'] = (senderSettings.business || '').substring(0, 40);
@@ -504,7 +512,7 @@ export default function EbayConverter() {
           ausPostRow['Send From Email Address'] = altSenderSettings.email;
         }
 
-        const postageService = resolveValue(normalizedRow, ['postage-service']) || '';
+        const postageService = resolveValue(normalizedRow, fieldAliases('postageService')) || '';
         const isExpress = postageService.toLowerCase().includes('express');
 
         // Add Item Description to Additional Label Information 1
@@ -966,9 +974,9 @@ export default function EbayConverter() {
               <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', fontWeight: 600 }}>Ebay Header</div>
               <div></div>
               <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', fontWeight: 600 }}>AusPost Column</div>
-              {Object.entries(EBAY_TO_AUSPOST_MAP).map(([ebay, auspost]) => (
-                <React.Fragment key={ebay}>
-                  <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', fontSize: '0.9rem' }}>{ebay}</div>
+              {EBAY_TO_AUSPOST_MAP.map(([fieldKey, auspost]) => (
+                <React.Fragment key={`${fieldKey}-${auspost}`}>
+                  <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', fontSize: '0.9rem' }}>{headerMap[fieldKey]}</div>
                   <ArrowRight size={14} color="var(--text-secondary)" />
                   <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', fontSize: '0.9rem', fontWeight: 500 }}>{auspost}</div>
                 </React.Fragment>

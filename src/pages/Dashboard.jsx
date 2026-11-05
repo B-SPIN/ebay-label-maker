@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { parseEbayCsv } from '../services/csvParser.js';
 import { validateAddresses, validatePostcode, startBackgroundValidation } from '../services/addressValidator.js';
-import { db } from '../db/database.js';
+import { db, getEbayHeaderMap } from '../db/database.js';
 import { NotificationService } from '../services/notificationService.js';
 import { UploadCloud, CheckCircle, AlertTriangle, FileText, Clock, Archive, Trash2, Printer, Edit2, Info, Loader2 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -57,7 +57,7 @@ export default function Dashboard() {
 
     try {
       // 1. Parse CSV
-      const parsedOrders = await parseEbayCsv(file);
+      const parsedOrders = await parseEbayCsv(file, await getEbayHeaderMap());
       
       if (parsedOrders.length === 0) {
         throw new Error('No valid orders found in CSV.');

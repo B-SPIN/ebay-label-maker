@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import assert from 'assert';
 import { parseEbayCsv } from '../src/services/csvParser.js';
+import { DEFAULT_HEADER_MAP } from '../src/services/ebayHeaders.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,6 +45,35 @@ async function runTest() {
     // Depending on the sample CSV, there might or might not be a multi-order merge in sample.csv.
     // If not, we just assert everything passed.
     
+    // sample.csv uses the new eBay headers ("Ship To ...", "Shipping Service").
+    // Fields must actually be populated, and the postage service must be recognised
+    // (untracked letters are merged, so at least one non-manual order must exist).
+    assert(results.every(o => o.name && o.postcode), 'Every order should have a name and postcode');
+    assert(results.some(o => !o.manualFlag), 'Shipping Service header should be read (letters merged, not all manual)');
+
+    // The legacy headers ("Post To ...", "Postage Service") must give identical results.
+    const legacyCsv = csvContent
+      .replaceAll('Ship To Postcode', 'Post To Postal Code')
+      .replaceAll('Ship To ', 'Post To ')
+      .replace('Shipping Service', 'Postage Service');
+    const legacyResults = await parseEbayCsv(legacyCsv);
+    assert.deepStrictEqual(legacyResults, results, 'Legacy headers should parse identically');
+
+    // A custom header map (admin override) must be honoured.
+    const customCsv = csvContent.replaceAll('Ship To ', 'Deliver Zed ');
+    const customResults = await parseEbayCsv(customCsv, {
+      ...DEFAULT_HEADER_MAP,
+      shipToName: 'Deliver Zed Name',
+      phone: 'Deliver Zed Phone',
+      address1: 'Deliver Zed Address 1',
+      address2: 'Deliver Zed Address 2',
+      city: 'Deliver Zed City',
+      state: 'Deliver Zed State',
+      postcode: 'Deliver Zed Postcode',
+      country: 'Deliver Zed Country'
+    });
+    assert.deepStrictEqual(customResults, results, 'Custom header map should parse identically');
+
     console.log('✅ ALL TESTS PASSED: CSV Parsed, Filtered, Grouped, and Merged correctly.\n');
   } catch (error) {
     console.error('❌ TEST FAILED:', error);

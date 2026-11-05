@@ -32,3 +32,8 @@ v2
 v2/*
 docs
 docs/*
+# Serena
+.serena
+.serena/*
+.claude
+.claude/*
